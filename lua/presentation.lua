@@ -3,12 +3,33 @@ local M = {}
 M.setup = function()
 end
 
+local function create_floating_win(opts)
+  opts = opts or {}
+  local width = opts.width or math.floor(vim.o.columns * 0.5)
+  local height = opts.height or math.floor(vim.o.lines * 0.5)
+  local col = math.floor((vim.o.columns - width) / 2)
+  local row = math.floor((vim.o.lines - height) / 2)
+  local buf = vim.api.nvim_create_buf(flase, true)
+  local win_config = {
+    relative = "editor",
+    row = row,
+    col = col,
+    width = width,
+    height = height,
+    focusable = true,
+    style = "minimal",
+    border = "single",
+  }
+  local win = vim.api.nvim_open_win(buf, true, win_config)
+  return {buf = buf, win = win}
+end
+
 local parse_slides = function(lines)
   local slides = {slides = {}}
   local current_slide = {}
   local seperator = "^#"
   for _, line in ipairs(lines) do
-    print(line, "find:", line:find(seperator), "|")
+    -- print(line, "find:", line:find(seperator), "|")
     if line:find(seperator) then
       if #current_slide > 0 then
         table.insert(slides.slides, current_slide)
@@ -23,12 +44,24 @@ local parse_slides = function(lines)
   return slides
 end
 
-vim.print(parse_slides {
-  "#hello",
-  "hello, world!",
-  "#another thing",
-  "another text",
-})
+M.start_presentation = function(opts)
+  opts = opts or {}
+  opts.bufnr = opts.bufnr or 0
+
+  local lines = vim.api.nvim_buf_get_lines(opts.bufnr, 0, -1, false)
+  local parsed = parse_slides(lines)
+  local floating_win = create_floating_win()
+  vim.api.nvim_buf_set_lines(floating_win.buf, 0, -1, false, parsed.slides[1])
+end
+
+M.start_presentation {bufnr = 2}
+
+-- vim.print( {
+--   "#hello",
+--   "hello, world!",
+--   "#another thing",
+--   "another text",
+-- })
 
 return M
 
