@@ -5,8 +5,8 @@ end
 
 local function create_floating_win(opts)
   opts = opts or {}
-  local width = opts.width or math.floor(vim.o.columns * 0.5)
-  local height = opts.height or math.floor(vim.o.lines * 0.5)
+  local width = opts.width or vim.o.columns
+  local height = opts.height or vim.o.lines
   local col = math.floor((vim.o.columns - width) / 2)
   local row = math.floor((vim.o.lines - height) / 2)
   local buf = vim.api.nvim_create_buf(flase, true)
@@ -70,6 +70,26 @@ M.start_presentation = function(opts)
   end, {
   buffer = floating_win.buf})
 
+  local restore = {
+    cmdheight = {
+      original = vim.o.cmdheight,
+      present = 0
+    }
+  }
+  -- set options during presentation
+  for option, config in pairs(restore) do
+    vim.opt[option] = config.present
+  end
+
+  vim.api.nvim_create_autocmd("BufLeave", {
+    buffer = floating_win.buf,
+    callback = function()
+      -- reset options after presentation quits
+      for option, config in pairs(restore) do
+        vim.opt[option] = config.original
+      end
+    end
+  })
   vim.api.nvim_buf_set_lines(floating_win.buf, 0, -1, false, parsed.slides[current_slide])
 end
 
