@@ -51,7 +51,26 @@ M.start_presentation = function(opts)
   local lines = vim.api.nvim_buf_get_lines(opts.bufnr, 0, -1, false)
   local parsed = parse_slides(lines)
   local floating_win = create_floating_win()
-  vim.api.nvim_buf_set_lines(floating_win.buf, 0, -1, false, parsed.slides[1])
+
+  local current_slide = 1
+  vim.keymap.set("n", "n", function()
+    current_slide = math.min(current_slide + 1, #parsed.slides)
+    vim.api.nvim_buf_set_lines(floating_win.buf, 0, -1, false, parsed.slides[current_slide])
+  end, {
+  buffer = floating_win.buf})
+
+  vim.keymap.set("n", "p", function()
+    current_slide = math.max(current_slide - 1, 1)
+    vim.api.nvim_buf_set_lines(floating_win.buf, 0, -1, false, parsed.slides[current_slide])
+  end, {
+  buffer = floating_win.buf})
+
+  vim.keymap.set("n", "q", function()
+    vim.api.nvim_win_close(floating_win.win, true)
+  end, {
+  buffer = floating_win.buf})
+
+  vim.api.nvim_buf_set_lines(floating_win.buf, 0, -1, false, parsed.slides[current_slide])
 end
 
 M.start_presentation {bufnr = 2}
